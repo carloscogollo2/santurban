@@ -444,6 +444,13 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(111, 208, 212, 
 .tdi { display: flex; align-items: center; gap: 16px; }
 .tdi .ico { flex: 0 0 auto; }
 
+/* Enlace al semáforo */
+.go-card { display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+.go { display: block; text-align: center; text-decoration: none; background: var(--oro); color: #05090c; font: 900 54px/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; padding: 30px 20px; }
+.go:hover { filter: brightness(1.1); }
+.go-note { font-size: 26px !important; line-height: 1.4; }
+.go-note.m { color: var(--mute); font-size: 22px !important; }
+
 /* Video */
 .vid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 360px; gap: 34px; align-items: stretch; }
 .vid video { width: 100%; height: 100%; max-width: none; max-height: none; background: #000; object-fit: contain; border: 1px solid var(--line); }
@@ -542,7 +549,7 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(111, 208, 212, 
       <div class="r reveal d3"><span class="min">Min 10-21</span><span class="who">Wilson</span><span class="sl">Láminas 8-13</span><p>Actores y sujetos, marco normativo, control político, social y judicial, la reversión de 2026.</p></div>
       <div class="r reveal d4"><span class="min">Min 21-30</span><span class="who">Viviana</span><span class="sl">Láminas 14-19</span><p>Resultados y primeras lecturas: Cunill, Rincón, Ríos y Garro, Restrepo, García y Revelo.</p></div>
       <div class="r reveal d5"><span class="min">Min 30-40</span><span class="who">Zamir</span><span class="sl">Láminas 20-25</span><p>Conflicto armado, Velásquez, lo común, la paradoja de 2026, respuesta a la pregunta guía y alternativas.</p></div>
-      <div class="r last reveal d6"><span class="min">Min 40-55</span><span class="who">Los cuatro</span><span class="sl">Láminas 26-28</span><p>Dinámica «La subasta del páramo» con todo el curso y plenaria.</p></div>
+      <div class="r last reveal d6"><span class="min">Min 40-55</span><span class="who">Los cuatro</span><span class="sl">Láminas 26-27</span><p>Dinámica «Semáforo del control» con todo el curso y conversación final.</p></div>
     </div>
   </div>
   <aside class="notes">CARLOS (30 s). «La exposición tiene cuatro bloques: cada uno de nosotros presenta uno. Al final, los cuatro conducimos una dinámica con todo el curso.» Así se cumple la exigencia de distribuir la palabra. Quedan 5 minutos para el grupo comentarista. Cronómetro: Carlos termina en el minuto 10, Wilson en el 21, Viviana en el 30, Zamir en el 40.</aside>
@@ -1116,46 +1123,33 @@ body.editing [contenteditable="true"] { outline: 1px dashed rgba(111, 208, 212, 
 <!-- =========================================================
      26 · DINÁMICA
      ========================================================= -->
-<section class="slide">
-  <svg class="motif"><use href="#topo"/></svg>
+<!-- =========================================================
+     26 · DINÁMICA: enlace al Semáforo del control (reemplaza las láminas 26 y 27 de la subasta)
+     ========================================================= -->
+<section class="slide has-photo">
+  <div class="photo ph-frailejones soft"></div>
   <header class="chrome"><span class="blk">Dinámica · <b>los cuatro</b></span><span class="pg"></span></header>
   <div class="body">
-    <p class="eyebrow oro reveal d1">Dinámica · 15 minutos</p>
-    <h2 class="reveal d1">La subasta <span class="o">del páramo</span></h2>
-    <div class="grid" style="grid-template-columns: 1.15fr 1fr;">
+    <p class="eyebrow oro reveal d1">Dinámica · 15 minutos · todo el curso</p>
+    <h2 class="reveal d1">El semáforo <span class="o">del control</span></h2>
+    <div class="grid" style="grid-template-columns: 1.25fr 1fr;">
       <div class="card oro reveal d2"><h3>Cómo funciona</h3><ul class="dash">
-        <li>Cinco equipos: <b>Empresa</b>, <b>Ciudad</b>, <b>Comunidad de Soto Norte</b>, <b>Senado</b> y <b>Corte</b>.</li>
-        <li><b class="o">Ronda 1 · el mercado:</b> se subastan tres lotes; gana quien ofrece más fichas.</li>
-        <li><b class="o">Ronda 2 · los controles:</b> la Ciudad puede marchar, el Senado citar, cualquiera puede pagar una tutela para activar a la Corte.</li>
-        <li><b class="o">Ronda 3 · cambió el gobierno:</b> ¿qué queda en pie?</li></ul></div>
-      <div class="card reveal d3"><h3>Reglas que reflejan las lecturas</h3><ul class="dash">
-        <li>La Corte no puja: solo actúa si alguien la activa (Cunill, p. 11).</li>
-        <li>Marchar presiona, pero no decide (Cunill, p. 10).</li>
-        <li>El Senado pregunta, pero no sanciona (Ríos y Garro, p. 314).</li>
-        <li>Antes de actuar, la Comunidad dice quién la protege si la señalan (Basto, 2019, p. 26).</li></ul></div>
+        <li>El curso se divide en dos bancadas: la del <b class="a">agua</b> y la del <b class="o">oro</b>.</li>
+        <li>Se proyecta un hecho real del caso y todos votan a la vez con la mano: presiona, pregunta, obliga o ninguno.</li>
+        <li>Se revela la respuesta, la trampa y la lectura que la explica.</li>
+        <li>Gana un punto la bancada donde predomine la respuesta correcta.</li></ul></div>
+      <div class="card reveal d3 go-card"><h3>Abrir el juego</h3>
+        <a class="go" href="semaforo.html" target="_blank" rel="noopener" data-go>Abrir el semáforo →</a>
+        <p class="go-note">Se abre en una pestaña nueva (tecla Intro). Al terminar, se cierra esa pestaña y se vuelve a esta presentación.</p>
+        <p class="go-note m">El archivo <b>semaforo.html</b> debe estar en la misma carpeta que esta presentación.</p></div>
     </div>
   </div>
-  <aside class="notes">LOS CUATRO. Viviana explica las reglas y lleva el cronómetro. Carlos arma los equipos y reparte tarjetas y fichas. Wilson es el subastador y hace de ministro cuando el Senado cita. Zamir conduce la ronda de controles y lee la tarjeta de giro; después conduce la plenaria (lámina 27) y cierra (lámina 28). Nadie cita lecturas durante la subasta: las lecturas se usan solo en la plenaria, a cargo de Zamir. Tiempos: 2 min de instrucciones, 4 de subasta, 4 de controles, 2 de giro de gobierno y 3 de plenaria. Fichas: 10 Empresa, 4 Ciudad, 2 Comunidad, 2 Senado; la Corte no recibe fichas. Tarjetas impresas: documento de estudio, sección 12.</aside>
+  <aside class="notes">LOS CUATRO. Dinámica del semáforo: se abre en otra pestaña (clic en el botón o tecla Intro). Un integrante explica las reglas y lleva el cronómetro, otro lee cada hecho y da la cuenta de tres, otro lleva el marcador y otro revela la respuesta, conduce la conversación final y cierra. Tiempos: 2 min de reglas y práctica, unos 9 de hechos, 3 de conversación final y 1 de cierre. Al terminar, cerrar la pestaña del semáforo (Ctrl o Cmd + W) y seguir con la lámina de gracias.</aside>
 </section>
 
 <!-- =========================================================
      27 · PLENARIA
      ========================================================= -->
-<section class="slide">
-  <svg class="motif"><use href="#topo"/></svg>
-  <header class="chrome"><span class="blk">Dinámica · <b>los cuatro</b></span><span class="pg"></span></header>
-  <div class="body">
-    <p class="eyebrow reveal d1">Plenaria</p>
-    <h2 class="reveal d1">Que la dinámica <span class="a">dé razón de lo expuesto</span></h2>
-    <div class="qs">
-      <div class="reveal d2"><span class="n">1</span><p>¿Quién ganó realmente la subasta?</p></div>
-      <div class="reveal d3"><span class="n">2</span><p>¿Qué mecanismo produjo consecuencias y cuál solo hizo ruido?</p></div>
-      <div class="reveal d4"><span class="n">3</span><p>¿Quién pagó el costo de proteger el páramo?</p></div>
-      <div class="reveal d5"><span class="n">4</span><p>Si el gobierno puede revocar, ¿para qué sirvió el control?</p></div>
-    </div>
-  </div>
-  <aside class="notes">ZAMIR conduce. No dar las respuestas: devolverlas al curso y cerrar cada una con la lectura. 1: nadie del todo; las reglas cambian (accountability vertical; Ríos y Garro, p. 315). 2: la tutela, que activa al juez (Cunill, p. 11); la marcha presiona (p. 10); el Senado, answerability sin enforcement (Ríos y Garro, p. 314). 3: Soto Norte (Hernández, p. 105, equidad en las cargas; «no existe lo común sin comunidad», Jiménez y Puello, p. 46). 4: la paradoja de la participación (Velásquez, 2009b, p. 368; Cunill, p. 18).</aside>
-</section>
 
 <!-- =========================================================
      28 · CIERRE
@@ -1383,6 +1377,7 @@ editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
 editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
 hotzone.addEventListener('click', () => editor.toggleEditMode());
 document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.target.isContentEditable) { const a = deck.slides[deck.current].querySelector('a[data-go]'); if (a) { e.preventDefault(); window.open(a.href, '_blank'); return; } }
     if ((e.key === 'e' || e.key === 'E') && !e.target.isContentEditable && !e.metaKey && !e.ctrlKey) editor.toggleEditMode();
     if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); editor.save(); editor.download(); }
 });
