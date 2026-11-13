@@ -251,6 +251,12 @@ svg.reloj.fin .num { animation: parpa .5s steps(2) infinite; }
 #final .kick { font: 500 28px/1 'IBM Plex Mono', monospace; letter-spacing: .25em; text-transform: uppercase; color: var(--hueso); opacity: .8; }
 #final h2 { font: 900 210px/.85 'Big Shoulders Display', sans-serif; text-transform: uppercase; color: var(--c); margin: 24px 0 10px; text-shadow: 0 10px 60px rgba(0,0,0,.5); }
 #final p { font: italic 400 46px/1.3 'Newsreader', serif; color: #e8efe9; max-width: 1300px; margin: 0 auto; }
+#seguir { margin-top: 44px; display: none; }
+#seguir.on { display: block; }
+#seguir .pregunta { font: 800 52px/1.1 'Big Shoulders Display', sans-serif; text-transform: uppercase; color: var(--hueso); margin-bottom: 22px; }
+#seguir .botones { display: flex; gap: 20px; justify-content: center; }
+#seguir .btn { font-size: 32px; padding: 20px 36px; }
+#podio div.fuera { opacity: .55; }
 #final .gotafin { width: 220px; height: 270px; margin: 0 auto 10px; animation: rebote 1.4s ease-in-out infinite; }
 @keyframes rebote { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
 #podio { display: flex; justify-content: center; gap: 40px; margin-top: 50px; }
@@ -370,8 +376,10 @@ svg.reloj.fin .num { animation: parpa .5s steps(2) infinite; }
       <svg class="gotafin" id="gFin" viewBox="-60 -80 120 150"></svg>
       <div class="kick" id="fKick">Llegó al páramo</div>
       <h2 id="fEq">Equipo azul</h2>
-      <p>Subieron recordando, actuando y explicando. Así se cuida el agua: paso a paso, y sin dejar de vigilar.</p>
+      <p id="fMsg">Subieron recordando, actuando y explicando. Así se cuida el agua: paso a paso, y sin dejar de vigilar.</p>
       <div id="podio"></div>
+      <div id="seguir"><div class="pregunta" id="sPreg"></div>
+        <div class="botones"><button class="btn oro" id="bSeguir">Sí, seguir jugando</button><button class="btn sec" id="bTerminar">No, terminar aquí</button></div></div>
     </div>
   </section>
 
@@ -460,7 +468,7 @@ let S, historial = [];
 function nuevo() {
   return { ronda: 0, pos: {azul:0, rojo:0, amarillo:0, verde:0}, llegada: {}, tick: 0,
     usadasP: [], usadasR: [], orden: [], tipos: [], textos: [], res: [], turno: -1,
-    fase: 'inicio', profeHecha: false, ganador: null, grupos: {} };
+    fase: 'inicio', profeHecha: false, ganador: null, grupos: {}, podio: [], faseTras: null };
 }
 function guardar() { try { localStorage.setItem('rutaAgua', JSON.stringify(S)); } catch (e) {} }
 function cargar() { try { const t = localStorage.getItem('rutaAgua'); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
@@ -749,15 +757,16 @@ function pintarPanel() {
   }
   $('subOrden').textContent = S.ronda === RONDA_PROFE ? 'Orden de esta ronda · ★ al final, reto de la profesora' : 'Orden de esta ronda';
   $('marcador').innerHTML = EQUIPOS.map(e => `<div class="mar" style="--c:${e.c}"><span class="nom">${e.nombre}</span>
-    <span class="barra">${Array.from({length: META}, (_, i) => `<i class="${i < S.pos[e.id] ? 'on' : ''}"></i>`).join('')}</span><span class="pts">${Math.min(S.pos[e.id], META)}</span></div>`).join('');
+    <span class="barra">${Array.from({length: META}, (_, i) => `<i class="${i < S.pos[e.id] ? 'on' : ''}"></i>`).join('')}</span><span class="pts">${(S.podio || []).includes(e.id) ? '<b style="color:var(--oro)">' + (S.podio.indexOf(e.id) + 1) + '.º</b>' : Math.min(S.pos[e.id], META)}</span></div>`).join('');
   const a = $('accion');
-  if (S.fase === 'ganador') a.innerHTML = `<button class="btn oro" onclick="mostrarFinal()">Ver al ganador</button>`;
+  if (S.fase === 'ganador') a.innerHTML = `<button class="btn oro" onclick="mostrarFinal()">${S.podio.length > 1 ? 'Ver la llegada' : 'Ver al ganador'}</button>`;
+  else if (S.fase === 'terminado') a.innerHTML = `<button class="btn oro" onclick="mostrarFinal()">Ver la clasificación</button>`;
   else if (S.fase === 'inicio' || S.fase === 'finRonda') {
     a.innerHTML = S.ronda >= RONDAS ? `<button class="btn oro" onclick="cerrarPorRondas()">Ver resultado final</button>`
       : `<button class="btn" onclick="sortear()">${S.ronda === 0 ? 'Sortear la ronda 1' : 'Sortear la ronda ' + (S.ronda + 1)}</button>`;
   } else if (S.fase === 'ronda') {
     const sig = S.res.length;
-    a.innerHTML = sig < 4 ? `<button class="btn" onclick="abrirTurno()">Turno ${sig + 1}: ${eqDe(S.orden[sig]).nombre}</button>`
+    a.innerHTML = sig < S.orden.length ? `<button class="btn" onclick="abrirTurno()">Turno ${sig + 1}: ${eqDe(S.orden[sig]).nombre}</button>`
       : (S.ronda === RONDA_PROFE && !S.profeHecha ? `<button class="btn oro" onclick="abrirProfe()">★ Reto de la profesora</button>` : '');
   } else a.innerHTML = '';
   $('ajuste').innerHTML = EQUIPOS.map(e => `<button style="--c:${e.c}" onclick="ajustar('${e.id}',1)">${e.nombre[0]} +</button><button style="--c:${e.c}" onclick="ajustar('${e.id}',-1)">${e.nombre[0]} −</button>`).join('');
@@ -781,21 +790,25 @@ function sortearRonda() {
   const libres = RETOS.map((_, i) => i).filter(i => !S.usadasR.includes(i));
   const quedan = Math.max(0, RONDAS - S.ronda);   // rondas que vienen después de esta
   const cuenta = l => l.reduce((m, i) => { const g = RETOS[i].grupo; if (g) m[g] = (m[g] || 0) + 1; return m; }, {});
-  const valida = (orden, tipos, pick, estricto) => {
+  // nivel 2: todas las reglas · nivel 1: sin mirar las rondas que quedan (puede sobrar algún reto
+  // de grupo, pero nadie repite) · nivel 0: solo la regla de la misma ronda.
+  const valida = (orden, tipos, pick, nivel) => {
     const g = pick.map(i => RETOS[i].grupo);
-    if (g[0] && g[0] === g[1]) return false;
-    if (estricto) {
+    if (g.length === 2 && g[0] && g[0] === g[1]) return false;
+    if (nivel >= 1) {
       const equipos = orden.filter((_, k) => tipos[k] === 'r');
       if (pick.some((i, k) => g[k] && (S.grupos[equipos[k]] || []).includes(g[k]))) return false;
+    }
+    if (nivel >= 2) {
       const resto = cuenta(libres.filter(i => !pick.includes(i)));
       if (Object.values(resto).some(n => n > quedan)) return false;
     }
     return true;
   };
-  for (const estricto of [true, false]) {
+  for (const estricto of [2, 1, 0]) {
     for (let intento = 0; intento < 400; intento++) {
-      const orden = barajar(EQUIPOS.map(e => e.id)), tipos = barajar(['p', 'p', 'r', 'r']);
-      const pick = barajar(libres.slice()).slice(0, 2);
+      const orden = barajar(activos()), tipos = barajar(['p', 'p', 'r', 'r']).slice(0, orden.length);
+      const pick = barajar(libres.slice()).slice(0, tipos.filter(t => t === 'r').length);
       if (!valida(orden, tipos, pick, estricto)) continue;
       S.orden = orden; S.tipos = tipos;
       let r = 0;
@@ -809,6 +822,13 @@ function sortearRonda() {
     }
   }
 }
+// Equipos que siguen en carrera (los que ya llegaron al páramo dejan de jugar).
+function activos() { S.podio = S.podio || []; return EQUIPOS.map(e => e.id).filter(id => !S.podio.includes(id)); }
+// Clasificación: primero los que llegaron, en su orden; luego el resto por altura (empate: el que llegó antes).
+function clasificacion() {
+  const resto = EQUIPOS.filter(e => !S.podio.includes(e.id)).sort((a, b) => (S.pos[b.id] - S.pos[a.id]) || ((S.llegada[a.id] || 1e9) - (S.llegada[b.id] || 1e9)));
+  return S.podio.map(eqDe).concat(resto);
+}
 function sortear() {
   foto();
   S.ronda += 1; S.fase = 'sorteo'; S.turno = -1; S.res = [];
@@ -816,7 +836,8 @@ function sortear() {
   pintarPanel();
   $('sRonda').textContent = S.ronda;
   const slots = $('slots'); slots.innerHTML = '';
-  const cajas = [0, 1, 2, 3].map(i => {
+  const ord = S.orden.slice(), tip = S.tipos.slice();   // copia: la animación no depende de cambios posteriores
+  const cajas = ord.map((_, i) => {
     const d = document.createElement('div'); d.className = 'slot';
     d.innerHTML = `<span class="pos">${i + 1}</span><svg class="gotag" viewBox="-50 -60 100 110"></svg><span class="nomb">?</span><span class="tipo p">Pregunta · 30 s</span>`;
     slots.appendChild(d); return d;
@@ -827,16 +848,16 @@ function sortear() {
   cajas.forEach((d, i) => {
     let n = 0; const fin = 14 + i * 7;
     const giro = () => {
-      const e = n < fin ? EQUIPOS[(n + i) % 4] : eqDe(S.orden[i]);
+      const e = n < fin ? eqDe(ord[(n + i) % ord.length]) : eqDe(ord[i]);
       const svg = d.querySelector('svg'); svg.innerHTML = ''; gotaSVG(svg, e.c, '', 1);
       d.querySelector('.nomb').textContent = e.nombre; d.querySelector('.nomb').style.color = e.c;
       if (n < fin) { SON.tic(); n++; setTimeout(giro, 60 + n * 9); }
       else {
         d.style.setProperty('--c', e.c);
-        const t = d.querySelector('.tipo'); const p = S.tipos[i] === 'p';
+        const t = d.querySelector('.tipo'); const p = tip[i] === 'p';
         t.className = 'tipo ' + (p ? 'p' : 'r'); t.textContent = p ? 'Pregunta · 30 s' : 'Reto · 45 s';
         d.classList.add('listo'); SON.cae();
-        if (i === 3) setTimeout(() => $('bJugar').classList.add('ver'), 500);
+        if (i === ord.length - 1) setTimeout(() => $('bJugar').classList.add('ver'), 500);
       }
     };
     setTimeout(giro, i * 120);
@@ -926,7 +947,8 @@ function resolver(ok) {
   S.res[S.turno] = ok;
   $('turno').classList.remove('on');
   if (ok) avanzar(id, 1, '¡Sube!'); else { SON.falla(); flash('Sigue abajo', 'var(--alerta)'); }
-  if (S.fase !== 'ganador') S.fase = S.res.length >= 4 && !(S.ronda === RONDA_PROFE && !S.profeHecha) ? 'finRonda' : 'ronda';
+  const sigue = S.res.length >= S.orden.length && !(S.ronda === RONDA_PROFE && !S.profeHecha) ? 'finRonda' : 'ronda';
+  if (S.fase === 'ganador') S.faseTras = sigue; else S.fase = sigue;
   pintarPanel();
 }
 function avanzar(id, n, msg) {
@@ -935,7 +957,9 @@ function avanzar(id, n, msg) {
   S.tick += 1; S.llegada[id] = S.tick;
   colocar(id); SON.acierto();
   flash(msg, eqDe(id).c);
-  if (S.pos[id] >= META && antes < META) { S.ganador = id; S.fase = 'ganador'; setTimeout(mostrarFinal, 1700); }
+  if (S.pos[id] >= META && antes < META && !(S.podio = S.podio || []).includes(id)) {
+    S.podio.push(id); S.ganador = id; S.fase = 'ganador'; S.faseTras = 'finRonda'; setTimeout(mostrarFinal, 1700);
+  }
 }
 function flash(t, c) { const f = $('flash'), m = $('flashMsg'); m.textContent = t; m.style.color = c; f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
 
@@ -944,7 +968,7 @@ let elegido = null;
 function abrirProfe() {
   if (S.profeHecha) return;
   S.fase = 'profe'; elegido = null;
-  $('elige').innerHTML = EQUIPOS.map((e, i) => `<button style="--c:${e.c}" data-id="${e.id}" onclick="elegir('${e.id}')">${i + 1} · ${e.nombre}</button>`).join('');
+  $('elige').innerHTML = EQUIPOS.map((e, i) => S.podio.includes(e.id) ? '' : `<button style="--c:${e.c}" data-id="${e.id}" onclick="elegir('${e.id}')">${i + 1} · ${e.nombre}</button>`).join('');
   reloj2.poner(T_RETO);
   $('profe').classList.add('on'); SON.profe(); pintarPanel();
 }
@@ -955,7 +979,7 @@ function cerrarProfe(ok) {
   foto(); reloj2.parar();
   S.profeHecha = true; $('profe').classList.remove('on');
   S.fase = 'finRonda';
-  if (ok) avanzar(elegido, 2, '¡+2!'); else if (ok === false) { SON.falla(); flash('Sin premio', 'var(--alerta)'); }
+  if (ok) avanzar(elegido, 2, '¡+2!');  // si con esto llega, avanzar() abre la pantalla de llegada else if (ok === false) { SON.falla(); flash('Sin premio', 'var(--alerta)'); }
   pintarPanel();
 }
 $('pSi').onclick = () => cerrarProfe(true);
@@ -964,21 +988,71 @@ $('pNadie').onclick = () => cerrarProfe(null);
 
 /* ========================= FINAL ========================= */
 function cerrarPorRondas() {
-  // Nadie llegó: gana el más alto; si empatan, el que llegó primero a esa altura.
-  const orden = EQUIPOS.slice().sort((a, b) => (S.pos[b.id] - S.pos[a.id]) || ((S.llegada[a.id] || 1e9) - (S.llegada[b.id] || 1e9)));
-  S.ganador = orden[0].id; S.fase = 'ganador'; mostrarFinal(true);
+  // Se acabaron las rondas: los puestos que faltan se definen por altura (empate: el que llegó antes).
+  const orden = clasificacion();
+  if (!S.podio.length) S.ganador = orden[0].id;
+  S.fase = 'terminado'; mostrarFinal(true);
+}
+const PUESTO = ['', 'primer', 'segundo', 'tercer', 'cuarto'];
+// ¿Queda juego para pelear el siguiente puesto? Hace falta más de un equipo y alguna ronda o turno por jugar.
+function quedaJuego() {
+  if (activos().length < 2) return false;
+  return S.ronda < RONDAS || (S.faseTras === 'ronda' && S.res.length < S.orden.length);
 }
 function mostrarFinal(porRondas) {
-  const e = eqDe(S.ganador);
+  const terminado = S.fase === 'terminado';
+  const lugar = S.podio.indexOf(S.ganador) + 1;           // 0 si nadie llegó (ganó por altura)
+  const rank = clasificacion();
+  const e = terminado ? rank[0] : eqDe(S.ganador);
   const capa = $('final'); capa.style.setProperty('--c', e.c);
-  $('fEq').textContent = 'Equipo ' + e.nombre;
-  $('fKick').textContent = S.pos[e.id] >= META ? 'Llegó primero al páramo' : 'Terminaron las 8 rondas · el que subió más alto';
+  $('fEq').textContent = terminado && S.podio.length > 1 ? 'Clasificación final' : 'Equipo ' + e.nombre;
+  if (terminado) {
+    $('fKick').textContent = S.podio.length ? (porRondas ? 'Terminaron las 8 rondas' : 'Fin del juego') : 'Terminaron las 8 rondas · el que subió más alto';
+    $('fMsg').textContent = S.podio.length > 1 ? `Ganó el equipo ${rank[0].nombre}. ¡Gracias por jugar y por cuidar el agua!` : 'Subieron recordando, actuando y explicando. Así se cuida el agua: paso a paso, y sin dejar de vigilar.';
+  } else if (lugar <= 1) {
+    $('fKick').textContent = 'Llegó primero al páramo';
+    $('fMsg').textContent = 'Subieron recordando, actuando y explicando. Así se cuida el agua: paso a paso, y sin dejar de vigilar.';
+  } else {
+    $('fKick').textContent = `${PUESTO[lugar][0].toUpperCase() + PUESTO[lugar].slice(1)} lugar · también llegó al páramo`;
+    $('fMsg').textContent = `¡Felicitaciones, equipo ${e.nombre}! Se quedan con el ${PUESTO[lugar]} lugar.`;
+  }
+  // Si con este puesto solo queda un equipo, ese queda de último y el juego termina.
+  if (!terminado && activos().length === 1) {
+    const ult = eqDe(activos()[0]);
+    $('fMsg').textContent += ` El equipo ${ult.nombre} queda en ${PUESTO[S.podio.length + 1]} lugar.`;
+    S.fase = 'terminado';
+  } else if (!terminado && !quedaJuego()) {
+    $('fMsg').textContent += ' Ya no quedan rondas: los demás puestos se definen por altura.';
+    S.fase = 'terminado';
+  }
+  const seguir = !terminado && S.fase === 'ganador';
+  $('sPreg').textContent = seguir ? `¿Quieren continuar peleando por el ${PUESTO[S.podio.length + 1]} lugar?` : '';
+  $('seguir').classList.toggle('on', seguir);
   const g = $('gFin'); g.innerHTML = ''; gotaSVG(g, e.c, '', 1.2);
-  const orden = EQUIPOS.slice().sort((a, b) => (S.pos[b.id] - S.pos[a.id]) || ((S.llegada[a.id] || 1e9) - (S.llegada[b.id] || 1e9)));
-  $('podio').innerHTML = orden.map((x, i) => `<div style="--c:${x.c}"><span>${i + 1}.º lugar</span>${x.nombre} · ${Math.min(S.pos[x.id], META)}</div>`).join('');
-  capa.classList.add('on'); SON.victoria(); confeti(e.c); guardar();
+  const fijo = S.fase === 'terminado';
+  $('podio').innerHTML = clasificacion().map((x, i) => {
+    const llego = S.podio.includes(x.id);
+    return `<div style="--c:${x.c}" class="${llego || fijo ? '' : 'fuera'}"><span>${llego || fijo ? (i + 1) + '.º lugar' : 'en carrera'}</span>${x.nombre} · ${Math.min(S.pos[x.id], META)}</div>`;
+  }).join('');
+  capa.classList.add('on'); SON.victoria(); confeti(e.c); pintarPanel();
 }
+function seguirJugando() {
+  if (S.fase !== 'ganador') return;
+  foto();
+  $('final').classList.remove('on');
+  S.fase = S.faseTras || 'finRonda'; S.faseTras = null;
+  if (S.fase === 'ronda' && S.res.length >= S.orden.length) S.fase = 'finRonda';
+  pintarPanel(); SON.inicio();
+}
+function terminarJuego() {
+  foto();
+  S.fase = 'terminado'; mostrarFinal();
+}
+$('bSeguir').onclick = seguirJugando;
+$('bTerminar').onclick = terminarJuego;
+let confetiId = 0;  // solo una lluvia de gotas a la vez, aunque se reabra la pantalla
 function confeti(c) {
+  const mio = ++confetiId;
   const cv = $('confeti'), x = cv.getContext('2d');
   const cols = [c, '#6fd0d4', '#d9a441', '#efe8da', c];
   const P = Array.from({length: 180}, () => ({ x: Math.random() * 1920, y: -Math.random() * 1080, v: 3 + Math.random() * 6, r: 6 + Math.random() * 10, c: cols[Math.floor(Math.random() * cols.length)], o: Math.random() * 6 }));
@@ -991,7 +1065,7 @@ function confeti(c) {
       x.bezierCurveTo(p.x + p.r * .5, p.y - p.r * .6, p.x + p.r, p.y, p.x + p.r, p.y + p.r * .3);
       x.arc(p.x, p.y + p.r * .3, p.r, 0, Math.PI); x.bezierCurveTo(p.x - p.r, p.y, p.x - p.r * .5, p.y - p.r * .6, p.x, p.y - p.r * 1.4); x.fill();
     });
-    t++; if ($('final').classList.contains('on')) requestAnimationFrame(f);
+    t++; if (mio === confetiId && $('final').classList.contains('on')) requestAnimationFrame(f);
   };
   f();
 }
@@ -1012,12 +1086,13 @@ $('bNo').onclick = () => resolver(false);
 $('bJugar').onclick = jugarRonda;
 function empezar(continuar) {
   ac();
+  if (S) { S.podio = S.podio || []; S.grupos = S.grupos || {}; }
   if (!continuar) { S = nuevo(); historial = []; }
   $('portada').classList.add('fuera');
   if (S.fase === 'sorteo') S.fase = 'ronda';
   if (S.fase === 'turno' || S.fase === 'profe') S.fase = 'ronda';
   pintarPanel();
-  if (S.fase === 'ganador') mostrarFinal();
+  if (S.fase === 'ganador' || S.fase === 'terminado') mostrarFinal();
 }
 $('bEmpezar').onclick = () => empezar(false);
 $('bContinuar').onclick = () => { S = cargar(); empezar(true); };
@@ -1026,6 +1101,10 @@ addEventListener('keydown', ev => {
   const k = ev.key.toLowerCase();
   if (k === 'p') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); return; }
   if ($('portada').classList.contains('fuera') === false) { if (k === 'enter') $('bEmpezar').click(); return; }
+  if ($('final').classList.contains('on') && $('seguir').classList.contains('on')) {
+    if (k === 'enter' || k === 's') { seguirJugando(); return; }
+    if (k === 'n') { terminarJuego(); return; }
+  }
   if (k === 'u') { deshacer(); return; }
   if (k === 'm') { $('ajuste').classList.toggle('on'); return; }
   if (S.fase === 'turno') {
@@ -1037,13 +1116,13 @@ addEventListener('keydown', ev => {
   }
   if (S.fase === 'profe') {
     if (k === ' ') { ev.preventDefault(); reloj2.alternar(); }
-    else if ('1234'.includes(k) && k) elegir(EQUIPOS[+k - 1].id);
+    else if ('1234'.includes(k) && k && !S.podio.includes(EQUIPOS[+k - 1].id)) elegir(EQUIPOS[+k - 1].id);
     else if (k === 's') cerrarProfe(true); else if (k === 'n') cerrarProfe(false);
     return;
   }
   if (S.fase === 'sorteo' && (k === 'enter' || k === 'arrowright')) { if ($('bJugar').classList.contains('ver')) jugarRonda(); return; }
   if (k === 'enter' || k === 'arrowright') { const b = document.querySelector('#accion .btn'); if (b) b.click(); }
-  if (k === 'escape' && S.fase === 'ganador') $('final').classList.remove('on');
+  if (k === 'escape' && (S.fase === 'ganador' || S.fase === 'terminado')) $('final').classList.remove('on');
 });
 
 /* ========================= ARRANQUE ========================= */
