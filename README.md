@@ -4,4 +4,6 @@ Estudio de caso del Páramo de Santurbán. Control Político y Control Social, E
 
 Presentación: abrir `index.html` en el navegador. Flechas para avanzar, tecla N para las notas, F en la lámina del video para pantalla completa.
 
+Dinámica: `ruta-del-agua.html`, el juego «La ruta del agua» (cuatro equipos, preguntas y retos). Se abre desde la lámina 26 o directamente.
+
 Fotografías: Wikimedia Commons, CC BY-SA. Relieve: Terrarium (Mapzen/AWS). Ríos: © colaboradores de OpenStreetMap. Créditos completos en la última lámina.
